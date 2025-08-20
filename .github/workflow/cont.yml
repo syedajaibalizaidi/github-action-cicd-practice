@@ -1,0 +1,102 @@
+### GITHUB ACTION HAS FOUR FUNC WHICH WE CAN USE WITH OUR IF STATEMENTS , FAILURE SUCCESS ALWAYS CANCELLED 
+### FAILURE >> RETURNS TRUE WHEN ANY PREV STEP OR JOB FAILED. 
+### SUCCESS >> RETURNS TRUE WHEN NONE OF THE PREV STEPS HAVE FAILED. 
+### ALWAYS >> CAUSES THE STEPS TO ALWAYS EXECUTE, EVEN WHE N CANCELLED.
+### CANCELLED >> RETURNS TRUE IF THE WORKFLOW HAS BEEN CANCELLED. 
+#### DEPENDING UPON THE WORKFLOW AND REQUIREMENT WE WILL EITHER USING IF OR CONT-ON-ERROR , FOR EXAMPLE IF WE DONT WANT THAT OUR PIPELINE STOPS DUE TO AN FAILING STEP USE THIS ROR. 
+#### FOR SOME STEPS IN THE WORKFLOWS WE MAY USE IF. FOR SELECTED STEPS OR JOB RUNNING NOT THE OVERALL WORKFLOW , USE IF CHECKS. 
+
+name: Continuos Website Deployment 
+on: 
+  push: 
+    branches: 
+      - main 
+
+jobs: 
+  lint: 
+    runs-on: ubuntu-latest 
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v4 
+      - name: Cache dependencies 
+        id: cache 
+        uses: actions/cache@v4 
+        with: 
+          path: node_modules 
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies 
+        if: steps.cache.outputs.cache-hit != 'true' ### another usecase for if statement 
+        run: npm ci 
+      - name: Lint code 
+        run: npm run lint 
+
+  test: 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v4 
+      - name: Cache dependencies 
+        id: cache 
+        uses: actions/cache@v4 
+        with: 
+          path: node_modules 
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies 
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci 
+      - name: Test code ### even if some steps failed in the the pipeline ezecution continues , we used cont-on-error for this and set it to true. 
+        continue-on-error: true 
+        id: run-tests 
+        run: npm run tests 
+      - name: Upload test reports 
+        if: failure() && steps.run-tests.outcome == 'failure' ### in this we set the job to execute even the test fails we used these methods from github offi web and without failure && it wont get executed. 
+        uses: actions/upload-artifact@v4
+        with: 
+          name: test-report
+          path: test.json 
+
+  build: 
+    needs: test 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v4 
+      - name: Cache dependencies 
+        id: cache 
+        uses: actions/cache@v4 
+        with: 
+          path: node_modules 
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies 
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci 
+      - name: build-website 
+        run: npm run build 
+      - name: Upload artifacts 
+        uses: actions/upload-artifacts@v4 
+        with: 
+          name: dist-files 
+          path: dist 
+
+  deploy: 
+    needs: build 
+    runs-on: ubuntu-latest 
+    steps:
+      - name: Get build artifacts 
+        uses: actions/dowload-artifact@v4 
+        with: 
+          name: dist-files 
+      - name: Output contents 
+        run: ls 
+      - name: Deploy 
+        run: echo "Deploying..."
+  
+  report:  #### USING IF STATEMENT ON JOB LEVEL 
+    needs: [lint, deploy]
+    if: failure()
+    runs-on: ubuntu-latest 
+    steps: 
+      - name: Output Inormation 
+        run: |
+          echo "Something went wrong" 
+          echo "${{ (github)}}"

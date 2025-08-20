@@ -1,0 +1,42 @@
+### IF WE HAVE TWO WORKFLOWS ONE WF UPLOADING WEBSITE CODE TO THE HOSTING SERVER AND THE OTHER WF DO SOME TESTING OR BUILDING 
+### BUT NOW YOU WNAT TO USE THAT ONE WORKFLOW INSIDE THE JOB OF THE OTHER WORKFLOW. SO GITHUB ACTIONS ALLOWS AS THAT WORKFLOW RESUSEABILITY FEATURE. 
+### WE WANT TO RUN THIS WORKFLOW INSIDE OF THE OTHER WORKFLOW INSTEAD OF USING PUSHING TRIGGER HERE. 
+### FOR THAT GITHUB ACTIONS GIVES US A GREAT EVENT >> workflow_call NOT workflow_dispatch that was used for manually running a workflow. 
+### THIS ALLOWS THE WORKFLOW TO BE CALLLED FROM THE OTHER WORKFLOW. 
+### WE CAN ALSO EXPECT SECRETS HERE BESIDES THIS. 
+### IF REUSABLE WORKFLOWS == FUNCTIONS THEN INPUTS ARE THE ARGUMENTS THAT WE PASS TO THEM AND OUTPUTS ARE THE RETURN VALUE. 
+
+name: Reusable workflow 
+on: 
+  workflow_call: 
+    inputs: 
+      artifacts-name:
+        description: The name of the deployable artifact 
+        required: false 
+        default: dist 
+        type: string 
+    outputs: 
+      result: 
+        description: The result of the deployment operation 
+        value: ${{ jobs.deploy.outputs.outcome }}
+    # secrets: 
+    #   some-secrets: 
+    #     required: false ## this is how we use secrets when needed. 
+
+jobs: 
+  deploy: 
+    outputs: 
+      outcome: $ {{ steps.set-results.outputs.step-result }}
+  runs-on: ubuntu-latest 
+  steps: 
+    - name: Get code 
+      uses: actions/dowload-artifact@v4 
+      with: 
+        name: ${{ inputs.artifact-name }}
+    - name: Lists files 
+      run: ls 
+    - name: Output information 
+      run: echo "Deploying and Uploading...."
+    - name: Set result output 
+      run: echo "step-result=success" >> $GITHUB_OUTPUT 
+

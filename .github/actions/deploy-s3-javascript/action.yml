@@ -1,0 +1,24 @@
+### JS CUSTOM ACTIONS 
+### FIRST WE  NEED TO RUN THIS CMD IN THE TERMINAL -> npm init -y ->> it unlocks the npm command 
+### npm install @actions/core @actions/github @actions/exec ->> toolkit provided by GHA , An official set of js packages we can use in our js actions. run this cmd in terminal. 
+###   
+
+name: 'Deploy to AWS S3'
+description: 'Deploying a web with AWS S3-Bucket'
+inputs: 
+  bucket: 
+    description: 'The S3 bucket'
+    required: false 
+  bucket-reigon: 
+    description: 'Bucket Reigon'
+    required: false 
+    default: 'us-east-1'
+  dist-folder: 
+    description: 'The folder containing the deployable files'
+    required: true 
+outputs: 
+  web-url: 
+    description: 'Deployed Web URL '
+runs:
+  using: 'node20'
+  main: 'main.js'

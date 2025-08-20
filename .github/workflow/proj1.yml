@@ -1,0 +1,32 @@
+#### Paths or paths-ignore >>> this allows us to say if we want to run a workflow if a push or pull_req changes file in a specific path. 
+### OR with paths-ignore if it changes anything but files in a specific folder. 
+### Skip ci by running in shell smthg like this >> git commit -m "added comments [skip-ci]"
+### Or we can Manually cancel the workflow through UI. if we know it wont succeed 
+### Available Events, Activity types,Event Filters, Cancelling and Skipping, Pull Req and Forks 
+name: Events Proj 1 
+on: 
+  pull_request: ###its an event which has diff activity types which triggers the event. so hence we used types after pull-req. 
+    types: 
+      - opened ### has many activity types. ###edited,closed 
+  workflow_dispatch: 
+  push: 
+    branches: ### event-filters 
+      - main: ### will only be pushed to main branch 
+      - 'dev-*': ### only to dev with - in it. 
+      - 'feat/**': ### only be pushed to files with // after 
+    paths-ignore: ### to ignore the path the push will not be executed unless this got edited. ## if we write paths then it will 
+      - '.github/workflows/*' ### if we did not change the file in this folder. 
+jobs: 
+  deploy: 
+    runs-on: ubuntu-latest
+    steps: 
+      - name: Output event data 
+        run: echo "${{ toJSON(github.event) }}"
+      - name: Get code 
+        run: actions/checkout@v3 
+      - name: nmp ci 
+        run: Test code 
+      - name: npm run test
+        run: Build code 
+      - name: Deploy Project 
+        run: echo "Deploying...."

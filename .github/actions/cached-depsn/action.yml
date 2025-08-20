@@ -1,0 +1,34 @@
+### IN THIS WE SHOULD DEFINE THE NAME AND WRITE THE PROPER DESCRIPTION OF THE CUSTOM ACTIONS. 
+### THEN RUNS AND USING LIKE WHICH CUSTOM ACTION IT IS USING HERE IN THIS CASE ITS COMPOSITE. 
+### HERE WE CAN USE OTHER ACTIONS IN OUR OWN ACTIONS. 
+### WE CAN ADD INPUTS TO CUSTOM ACTIONS NO MATTER WHICH TYPE OF ACTION ARE THEY. we can add as many inputs as needed. 
+
+name: 'Get and Cache dependencies'
+description: 'Get the dependencies via (npm) and cache them'
+inputs: ### to define the input we use it on the same level of name. 
+  caching: ### this naming is upto us we can name it anything. 
+    description: 'cache dependencies or not'    ### thats not to us we must use it. 
+    required: false ### after desc we define required either this field needed or not. if its set to false then we can use default and set it to 'true'.
+    default: 'true' 
+outputs: 
+  cache-use: 
+    description: 'Cache used or not'
+    value: ${{ steps.install.outputs.cache }}
+runs: 
+  using: 'composite' ### using composite custom actions
+  steps: 
+    - name: Cache dependencies ### pasted the repeating code here. 
+      if: inputs.caching == 'true' ### context keyword provided by GHA 
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: node_modules
+        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    - name: Install dependencies
+      id: install 
+      if: steps.cache.outputs.cache-hit != 'true' || inputs.caching != 'true'
+      run: |
+        npm ci 
+        echo "cache=${{ inputs.caching }}" >> $GITHUB_OUTPUT 
+
+      shell: bash 

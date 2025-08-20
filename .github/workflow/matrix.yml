@@ -1,0 +1,25 @@
+#### THE MATRIX USE-CASE IS GOOD FOR TESTING PURPOSES WHERE WE HAVE MULTIPLE OS AND NODE-VERSIONS SO TO TEST THEM ON MULTIPLE VS AND OS WE CAN USE MATRIX. 
+
+name: Matrix Deployment 
+on: push 
+jobs: 
+  build: 
+    continue-on-error: true 
+    strategy: 
+      matrix: 
+        node-version: [20,22,24]
+        operating-system: [ubuntu-latest, windows-latest]
+        include: ### to include any specific thing we use include with lists and its a reserved keyword. 
+          - node-version: 20 
+            operating-system: ubuntu-latest 
+        exclude: ### to exclude specific thing we use this keyword. 
+          - node-version: 22 
+            operating-system: windows-latest 
+    runs-on: ${{matrix.operating-system}}
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v4 
+      - name: Install NodeJs
+        uses: actions/setup-node@v4 
+        with: 
+          node-version: ${{matrix.node-version}}

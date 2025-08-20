@@ -1,0 +1,20 @@
+### CUSTOM ACTION FOR DOCKER 
+name: 'S3 Deployment with Docker'
+description: 'deploying web with S3'
+inputs: 
+  bucket: 
+    description: 'The S3 bucket'
+    required: false 
+  bucket-reigon: 
+    description: 'Bucket Reigon'
+    required: false 
+    default: 'us-east-1'
+  dist-folder: 
+    description: 'The folder containing the deployable files'
+    required: true
+outputs: 
+  web-url: 
+    description: 'Deployed Web URL'
+runs: 
+  using: 'docker'
+  image: 'Dockerfile' 

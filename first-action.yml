@@ -1,0 +1,33 @@
+### GITHUB ACTION BY MAX >>> WORKFLOW JOBS STEPS 
+name: Test Project 
+on: [push, workflow_dispatch] ### event ### for triggering multiple events we place them inside list just as we did here.  
+jobs: 
+  test: 
+    runs-on: ubuntu-latest ###Server assigned by the Github 
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v3  ### when we want to use an Action we use uses keyword not the run keyword. Action checkout is used for fetching the repo code.
+      - name: Install NodeJs ### the node comes preinstalled in ubuntu serevr but to be specific we gonna install node 
+        uses: actions/setup-node@v3 ### way to install node-js 
+        with: ### with keyword used for the configuartion 
+          node-version: 18 
+      - name: Install dependencies 
+        run: npm ci 
+      - name: Run tests 
+        run: npm test 
+  deploy: ###another job inside the workflow 
+    needs: test ### if test fails then this should not be get executed for this we use ##NEEDS keyword 
+    runs-on: ubuntu-latest 
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v3 
+      - name: Install NodeJs 
+        uses: actions/setup-node@v3 
+        with: 
+          node-version: 18 
+      - name: Install dependencies 
+        run: npm ci 
+      - name: Build Project 
+        run: npm run build
+      - name: Deploy 
+        run: echo "Deploying" 

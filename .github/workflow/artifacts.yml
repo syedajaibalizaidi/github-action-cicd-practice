@@ -1,0 +1,76 @@
+### GITHUB ACTIONS ARTIFACTS MODULE 5 
+### DEPENDENCIES CACHING >> JOBS IN THE WORKFLOW TAKES TIME TO INSTALL DEPENDENCIES WHICH IS NOT OUR GOAL FOR THIS WE USE THE DEP.. CAC... CONCEPT. 
+### ARTIFACTS >> JOBS OFTEN PRODUCT ASSETS THAT SHOULD BE SHARED OR ANALYZED , DEPLOYABLE WEBSITE FILES, LOGS, BINARIES. ETC 
+### THESE ASSETS ARE REFFERED TO ARTIFACTS 
+### GITHUB ACTION PROVIDES ACTION FOR UPLOADING AND DOWNLOADING 
+### OUTPUTS >> BESIDES ARTIFACTS STEPS CAN PRODUCT AND SHARE SIMPLE VALUES. 
+### JOBS CAN PICKUP AND SHARE STEP OUTPUTS VIA THE STEPS CONTEXT 
+name: Deploy Website 
+on: 
+  push: 
+    branches: 
+      - main
+jobs: 
+  test: 
+  runs-on: ubuntu-latest 
+  steps: 
+    - name: Get code 
+      uses: actions/checkout@v4
+    - name: Cache dependencies 
+      uses: actions/cache@v3 
+      with: 
+        path: ~/.npm ### diff path and key for diff languages. we can get these from documentation. 
+        key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+    - name: Install dependencies 
+      run: npm ci 
+    - name: Lint code 
+      run: npm run lint 
+    - name: Test code 
+      run: npm run test
+  build: 
+    needs: test 
+    runs-on: ubuntu-latest
+    outputs: 
+      script-file: ${{ steps.publish.outputs.script-file }}
+    steps: 
+      - name: Get code 
+        uses: actions/checkout@v4
+      - name: Cache dependencies 
+        uses: actions/cache@v4 
+        with: 
+          path: ~/.npm ### diff path and key for diff languages. we can get these from documentation. 
+          key: deps-node-modules-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies 
+        run: npm ci 
+      - name: Build websites
+        run: npm run build 
+      - name: Publish JS file 
+        id: publish 
+        run: find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
+      - name: Upload artifacts ###uploading the artifacts 
+        uses: actions/upload-artifact@v4
+        with: 
+          name: dist-files 
+          path: dist 
+  deploy: 
+    needs: build 
+    runs-on: ubuntu-latest 
+    steps: 
+      - name: Get build artifacts ### downloading the artifacts from the prev job 
+        uses: actions/download-artifact@v4 
+        with: 
+          name: dist-files 
+      - name: Output contents 
+        run: ls 
+      - name: Deploy 
+        id: deploy 
+        uses: ./.github/actions/deploy-s3-docker ### using custom js actions 
+        env: 
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        with: 
+          bucket: gha-custom-hosting 
+          dist-folder: ./dist 
+      - name: Output Information 
+        run: |
+          echo "Live URL: ${{ steps.deploy.outputs.website-url }}"
